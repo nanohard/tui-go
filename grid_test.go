@@ -31,10 +31,8 @@ var drawGridTests = []struct {
 		test: "Grid with empty labels",
 		size: image.Point{15, 5},
 		setup: func() *Grid {
-			g := NewGrid(0, 0)
+			g := NewGrid(2, 2)
 			g.SetBorder(true)
-			g.AppendRow(NewLabel(""), NewLabel(""))
-			g.AppendRow(NewLabel(""), NewLabel(""))
 			return g
 		},
 		want: `
@@ -90,20 +88,87 @@ var drawGridTests = []struct {
 └────────┴────────┘
 `,
 	},
+	{
+		test: "Grid with column stretch",
+		size: image.Point{24, 5},
+		setup: func() *Grid {
+			g := NewGrid(3, 2)
+			g.SetBorder(true)
+
+			g.SetColumnStretch(0, 1)
+			g.SetColumnStretch(1, 2)
+			g.SetColumnStretch(2, 1)
+
+			return g
+		},
+		want: `
+┌─────┬──────────┬─────┐
+│.....│..........│.....│
+├─────┼──────────┼─────┤
+│.....│..........│.....│
+└─────┴──────────┴─────┘
+`,
+	},
+	{
+		test: "Grid with one undefined column stretch",
+		size: image.Point{19, 5},
+		setup: func() *Grid {
+			g := NewGrid(3, 2)
+			g.SetBorder(true)
+
+			// First column stretch defaults to 0
+			//g.SetColumnStretch(0, 0)
+
+			g.SetColumnStretch(1, 2)
+			g.SetColumnStretch(2, 1)
+
+			return g
+		},
+		want: `
+┌┬──────────┬─────┐
+││..........│.....│
+├┼──────────┼─────┤
+││..........│.....│
+└┴──────────┴─────┘
+`,
+	},
+	{
+		test: "Grid with mixed column stretch",
+		size: image.Point{34, 5},
+		setup: func() *Grid {
+			g := NewGrid(3, 2)
+			g.SetBorder(true)
+
+			g.SetColumnStretch(0, 3)
+			g.SetColumnStretch(1, 2)
+			g.SetColumnStretch(2, 1)
+
+			return g
+		},
+		want: `
+┌───────────────┬──────────┬─────┐
+│...............│..........│.....│
+├───────────────┼──────────┼─────┤
+│...............│..........│.....│
+└───────────────┴──────────┴─────┘
+`,
+	},
 }
 
 func TestGrid_Draw(t *testing.T) {
 	for _, tt := range drawGridTests {
-		surface := newTestSurface(tt.size.X, tt.size.Y)
-		painter := NewPainter(surface, NewTheme())
+		t.Run(tt.test, func(t *testing.T) {
+			surface := newTestSurface(tt.size.X, tt.size.Y)
+			painter := NewPainter(surface, NewTheme())
 
-		g := tt.setup()
+			g := tt.setup()
 
-		g.Resize(surface.size)
-		g.Draw(painter)
+			g.Resize(surface.size)
+			g.Draw(painter)
 
-		if surface.String() != tt.want {
-			t.Errorf("got = \n%s\n\nwant = \n%s", surface.String(), tt.want)
-		}
+			if surface.String() != tt.want {
+				t.Errorf("got = \n%s\n\nwant = \n%s", surface.String(), tt.want)
+			}
+		})
 	}
 }
